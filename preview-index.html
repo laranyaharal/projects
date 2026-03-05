@@ -3,149 +3,293 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Interactive Virtual Library</title>
+<title>Laranya's Vision Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
   body {
-    margin: 0;
-    font-family: sans-serif;
-    background: #f5f5f0;
-    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    transition: all 0.3s ease;
   }
-  .library-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    background: url('a_web_based_interactive_simulation_mimicking_the_s.png') center/cover no-repeat;
+
+  h1 {
+    font-size: 32px;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+    transition: color 0.3s ease;
   }
-  .student {
-    position: absolute;
-    width: 60px;
-    height: 60px;
+
+  button {
+    margin-bottom: 20px;
+    padding: 10px 18px;
+    font-size: 16px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.2s;
-    animation: subtleMove 3s infinite alternate;
+    font-weight: bold;
+    transition: all 0.2s ease;
   }
-  .student:hover {
-    transform: scale(1.1);
+
+  .legend, .progress {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    font-weight: 500;
+    align-items: center;
+    transition: color 0.3s ease;
   }
-  @keyframes subtleMove {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-    100% { transform: translateY(0); }
-  }
-  /* Your bench */
-  .you {
-    position: absolute;
-    width: 120px;
-    height: 100px;
-    top: 55%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-  /* Laptop screen overlay for blinking cursor */
-  .laptop-screen {
-    position: absolute;
-    width: 60%;
-    height: 30%;
-    top: 20%;
-    left: 20%;
-    background: rgba(0,0,0,0.9);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .cursor {
-    display: inline-block;
-    width: 6px;
+
+  .legend .box, .progress .box {
+    width: 20px;
     height: 20px;
-    background: lime;
-    animation: blink 1s infinite;
-    vertical-align: bottom;
-  }
-  @keyframes blink {
-    0%, 50%, 100% { opacity: 1; }
-    25%, 75% { opacity: 0; }
-  }
-  .tooltip {
-    position: absolute;
-    background: rgba(0,0,0,0.85);
-    color: #fff;
-    padding: 6px 10px;
     border-radius: 6px;
-    font-size: 12px;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   }
+
+  .legend .black, .progress .black { background: #000; }
+  .legend .red, .progress .red { background: #FF3B30; }
+  .legend .yellow, .progress .yellow { background: #FFD60A; }
+
+  #snapshotArea {
+    padding: 25px;
+    border-radius: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    display: inline-block;
+    transition: all 0.3s ease;
+  }
+
+  #snapshotArea h2 {
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+    transition: color 0.3s ease;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(20, 40px);
+    grid-gap: 10px;
+  }
+
+  .box {
+    width: 40px;
+    height: 40px;
+    background-color: #000;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+
+  .box:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+  }
+
+  .box.red { background-color: #FF3B30; }
+  .box.yellow { background-color: #FFD60A; }
+
+  .popup {
+    display: none;
+    position: absolute;
+    top: -70px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 15px;
+    padding: 10px 12px;
+    z-index: 10;
+    flex-direction: column;
+    transition: all 0.3s ease;
+  }
+
+  .popup button {
+    border: none;
+    padding: 6px 12px;
+    margin: 5px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    width: 80px;
+    transition: all 0.2s;
+    font-weight: bold;
+  }
+
+  .popup button.selected {
+    font-weight: bold;
+  }
+
+  /* LIGHT MODE */
+  body.light { background: #f0ede5; color: #1c1c1e; }
+  body.light h1, body.light .legend, body.light .progress { color: #1c1c1e; }
+  body.light #snapshotArea { background: #fdf9f1; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+  body.light #snapshotArea h2 { color: #1c1c1e; }
+  body.light .popup { background: #fff8ed; }
+  body.light .popup button { background: #1c1c1e; color: white; }
+  body.light .popup button.selected { background: #FFD60A; color: #1c1c1e; }
+
+  /* DARK MODE */
+  body.dark { background: #121212; color: #fff; }
+  body.dark h1, body.dark .legend, body.dark .progress { color: #fff; }
+  body.dark #snapshotArea { background: #1c1c1e; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+  body.dark #snapshotArea h2 { color: #FFD60A; }
+  body.dark .popup { background: #2c2c2c; }
+  body.dark .popup button { background: #FFD60A; color: #1c1c1e; }
+  body.dark .popup button.selected { background: #FF3B30; color: #fff; }
 </style>
 </head>
-<body>
+<body class="light">
 
-<div class="library-container">
-  <!-- Other students -->
-  <div class="student" style="top: 35%; left: 40%;"></div>
-  <div class="student" style="top: 35%; left: 50%;"></div>
-  <div class="student" style="top: 35%; left: 60%;"></div>
-  <div class="student" style="top: 50%; left: 40%;"></div>
-  <div class="student" style="top: 50%; left: 60%;"></div>
-  <div class="student" style="top: 65%; left: 45%;"></div>
-  <div class="student" style="top: 65%; left: 55%;"></div>
+<h1>Laranya's Vision</h1>
 
-  <!-- Your bench with laptop -->
-  <div class="you">
-    <img src="your_laptop.png" style="width:100%; height:100%;" alt="Your Bench with Laptop">
-    <div class="laptop-screen">
-      <span class="cursor"></span>
-    </div>
-  </div>
+<div style="display:flex; gap:10px; margin-bottom:15px;">
+  <button id="snapshotBtn">📸 Share Snapshot</button>
+  <button id="toggleMode">🌙 Toggle Dark/Light</button>
 </div>
 
-<div class="tooltip" id="tooltip"></div>
+<div id="snapshotArea">
+  <h2>Laranya’s Vision Tracker</h2>
+
+  <div class="legend">
+    <div class="box black"></div> Not started
+    <div class="box red"></div> Partially done
+    <div class="box yellow"></div> Completed
+  </div>
+
+  <div class="progress">
+    <div class="box black"></div> <span id="notStarted">0</span> Not started
+    <div class="box red"></div> <span id="partialDone">0</span> Partially done
+    <div class="box yellow"></div> <span id="completed">0</span> Completed
+  </div>
+
+  <div class="grid" id="tracker"></div>
+</div>
 
 <script>
-  const activities = [
-    "Reading a textbook",
-    "Typing on a laptop",
-    "Taking notes in a notebook",
-    "Highlighting pages",
-    "Sipping coffee",
-    "Reviewing lecture slides",
-    "Solving practice problems",
-    "Sketching diagrams",
-    "Listening to soft music while studying"
-  ];
+const tracker = document.getElementById('tracker');
+const totalBoxes = 200;
+let savedData = JSON.parse(localStorage.getItem('laranyaTracker')) || {};
 
-  const students = document.querySelectorAll('.student');
-  const tooltip = document.getElementById('tooltip');
+const notStartedEl = document.getElementById('notStarted');
+const partialDoneEl = document.getElementById('partialDone');
+const completedEl = document.getElementById('completed');
 
-  // Assign each student a current activity
-  const studentActivities = Array.from(students).map(() => {
-    return activities[Math.floor(Math.random() * activities.length)];
-  });
+function saveState() {
+  localStorage.setItem('laranyaTracker', JSON.stringify(savedData));
+}
 
-  // Function to update activities every 5 seconds
-  function updateActivities() {
-    students.forEach((student, index) => {
-      studentActivities[index] = activities[Math.floor(Math.random() * activities.length)];
-    });
+for (let i = 0; i < totalBoxes; i++) {
+  const box = document.createElement('div');
+  box.classList.add('box');
+  box.dataset.index = i;
+
+  if (savedData[i]) {
+    box.dataset.cfa = savedData[i].cfa;
+    box.dataset.body = savedData[i].body;
+    updateBoxColor(box);
+  } else {
+    box.dataset.cfa = '0';
+    box.dataset.body = '0';
   }
-  setInterval(updateActivities, 5000);
 
-  // Tooltip on hover shows current activity
-  students.forEach((student, index) => {
-    student.addEventListener('mouseenter', e => {
-      tooltip.textContent = studentActivities[index];
-      tooltip.style.opacity = 1;
-      tooltip.style.left = e.pageX + 10 + "px";
-      tooltip.style.top = e.pageY + 10 + "px";
-    });
-    student.addEventListener('mousemove', e => {
-      tooltip.style.left = e.pageX + 10 + "px";
-      tooltip.style.top = e.pageY + 10 + "px";
-    });
-    student.addEventListener('mouseleave', () => {
-      tooltip.style.opacity = 0;
+  const popup = document.createElement('div');
+  popup.classList.add('popup');
+
+  const cfaBtn = document.createElement('button');
+  cfaBtn.textContent = 'CFA';
+  const bodyBtn = document.createElement('button');
+  bodyBtn.textContent = 'Body';
+
+  popup.appendChild(cfaBtn);
+  popup.appendChild(bodyBtn);
+  box.appendChild(popup);
+
+  if (box.dataset.cfa === '1') cfaBtn.classList.add('selected');
+  if (box.dataset.body === '1') bodyBtn.classList.add('selected');
+
+  box.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+    popup.style.display = 'flex';
+  });
+
+  [cfaBtn, bodyBtn].forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('selected');
+      box.dataset.cfa = cfaBtn.classList.contains('selected') ? '1' : '0';
+      box.dataset.body = bodyBtn.classList.contains('selected') ? '1' : '0';
+      updateBoxColor(box);
+
+      savedData[box.dataset.index] = { cfa: box.dataset.cfa, body: box.dataset.body };
+      saveState();
+      updateProgress();
     });
   });
+
+  tracker.appendChild(box);
+}
+
+function updateBoxColor(box) {
+  if (box.dataset.cfa === '1' && box.dataset.body === '1') {
+    box.classList.remove('red');
+    box.classList.add('yellow');
+    box.style.backgroundColor = '';
+  } else if (box.dataset.cfa === '1' || box.dataset.body === '1') {
+    box.classList.remove('yellow');
+    box.classList.add('red');
+    box.style.backgroundColor = '';
+  } else {
+    box.classList.remove('yellow', 'red');
+    box.style.backgroundColor = '#000';
+  }
+}
+
+function updateProgress() {
+  let black = 0, red = 0, yellow = 0;
+  document.querySelectorAll('.grid .box').forEach(box => {
+    if (box.classList.contains('yellow')) yellow++;
+    else if (box.classList.contains('red')) red++;
+    else black++;
+  });
+  notStartedEl.textContent = black;
+  partialDoneEl.textContent = red;
+  completedEl.textContent = yellow;
+}
+
+updateProgress();
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+});
+
+document.getElementById('snapshotBtn').addEventListener('click', () => {
+  const snapshotArea = document.getElementById('snapshotArea');
+  const bg = document.body.classList.contains('light') ? '#f0ede5' : '#121212';
+
+  html2canvas(snapshotArea, { backgroundColor: bg }).then(canvas => {
+    const imageData = canvas.toDataURL('image/png');
+    const newTab = window.open();
+    newTab.document.body.style.margin = '0';
+    newTab.document.body.style.background = bg;
+    const img = newTab.document.createElement('img');
+    img.src = imageData;
+    img.style.width = '100%';
+    img.style.height = 'auto';
+    newTab.document.body.appendChild(img);
+  });
+});
+
+document.getElementById('toggleMode').addEventListener('click', () => {
+  document.body.classList.toggle('light');
+  document.body.classList.toggle('dark');
+});
 </script>
 
 </body>
